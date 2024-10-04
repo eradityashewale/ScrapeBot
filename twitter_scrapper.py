@@ -1,10 +1,11 @@
+from random import randint
 from twikit import Client, TooManyRequests
 import csv
 from configparser import ConfigParser
 import asyncio
-from datetime import datetime
+from datetime import datetime, time
 
-MINIMUM_TWEETS = 10
+MINIMUM_TWEETS = 100
 QUERY = 'CHATBOT'
 
 # Load configuration
@@ -24,8 +25,21 @@ client = Client(language='en-US')
 client.load_cookies('cookies.json')
 tweet_count = 0 
 
+
+async def get_tweets(tweets):
+    if not tweets or len(tweets) == 0:
+        print(f'{datetime.now()} - Getting tweets....')
+        tweets = await client.search_tweet(QUERY, product='Top')
+    else:
+        wait_time = randint(5, 10)
+        print(f'{datetime.now()} - Getting next tweets after {wait_time} seconds....')
+        await asyncio.sleep(wait_time)  # Use asyncio.sleep instead of time.sleep
+        print(f'{datetime.now()} - Getting next tweets...')
+        tweets = await tweets.next()  # Await this call
+    return tweets
+
 async def main():
-    global tweet_count  # Declare tweet_count as global
+    global tweet_count
     
     await client.login(auth_info_1=username, auth_info_2=email, password=password)
     
@@ -33,12 +47,7 @@ async def main():
     tweets = await client.search_tweet(QUERY, 'Top')
 
     while tweet_count < MINIMUM_TWEETS:
-        if not tweets or len(tweets) == 0:
-            print(f'{datetime.now()} - Getting tweets....')
-            tweets = await client.search_tweet(QUERY, product='Top')
-        else:
-            print(f'{datetime.now()} - Getting next tweets...')
-            tweets = await tweets.next()  # Await this call
+        tweets = await get_tweets(tweets)  # Await here
 
         if not tweets:
             print(f'{datetime.now()} - No more tweets found')
