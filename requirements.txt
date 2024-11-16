@@ -1,0 +1,2 @@
+twikit
+psycopg2-binary
